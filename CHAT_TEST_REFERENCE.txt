@@ -1,0 +1,151 @@
+╔════════════════════════════════════════════════════════════════════╗
+║              CHAT TESTING - QUICK REFERENCE CARD                   ║
+╚════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────┐
+│ OPTION 1: AUTOMATED TEST (EASIEST)                                │
+├────────────────────────────────────────────────────────────────────┤
+│ 1. Double-click: demo-chat-test.bat                               │
+│ 2. Follow the on-screen prompts                                   │
+│ 3. It will open all windows automatically!                        │
+└────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────┐
+│ OPTION 2: MANUAL TEST                                             │
+├────────────────────────────────────────────────────────────────────┤
+│ Step 1: Start Servers                                             │
+│   → Double-click: start-servers.bat                               │
+│   → Wait for: "Both servers are now running!"                     │
+│                                                                    │
+│ Step 2: Open Client Windows                                       │
+│   → Double-click: start-client.bat (3 times for 3 windows)        │
+│                                                                    │
+│ Step 3: Login                                                     │
+│   Window 1: admin     / 123      / Teacher                        │
+│   Window 2: alice     / student  / Student                        │
+│   Window 3: bob       / student  / Student                        │
+│                                                                    │
+│ Step 4: Chat!                                                     │
+│   → Type messages in any window                                   │
+│   → Watch them appear in ALL windows instantly                    │
+└────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════╗
+║                    LOGIN CREDENTIALS                               ║
+╠════════════════════════════════════════════════════════════════════╣
+║ TEACHER:                                                           ║
+║   Username: admin                                                  ║
+║   Password: 123                                                    ║
+║   Role:     Teacher                                                ║
+║                                                                    ║
+║ STUDENT:                                                           ║
+║   Username: (any name like alice, bob, charlie)                    ║
+║   Password: student                                                ║
+║   Role:     Student                                                ║
+╚════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────┐
+│ WHAT TO TEST                                                       │
+├────────────────────────────────────────────────────────────────────┤
+│ 1. Send message from Teacher → appears in all Student windows     │
+│ 2. Send message from Student → appears in all windows             │
+│ 3. Multiple students chatting → everyone sees everything          │
+│ 4. Close a window → others see "user left the chat"               │
+│ 5. Open new window → new user sees chat history                   │
+│ 6. Type and press Enter → message sends                           │
+└────────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────────┐
+│ WHAT YOU'LL SEE                                                    │
+├────────────────────────────────────────────────────────────────────┤
+│ In YOUR window:                                                    │
+│   [10:30:15] You: Hello everyone                                  │
+│                                                                    │
+│ In OTHER windows:                                                 │
+│   [10:30:15] alice: Hello everyone                                │
+│                                                                    │
+│ System messages:                                                  │
+│   [10:30:10] SYSTEM: alice joined the chat                        │
+│   [10:30:45] SYSTEM: bob left the chat                            │
+│                                                                    │
+│ Teacher messages:                                                 │
+│   [10:31:00] admin (Teacher): Quiz starts now!                    │
+└────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════╗
+║                     WINDOW LAYOUT                                  ║
+╠════════════════════════════════════════════════════════════════════╣
+║ TEACHER WINDOW:                                                    ║
+║  ┌──────────────────┬──────────────────┐                          ║
+║  │ Student Scores   │ Live Chat        │                          ║
+║  │ (Left panel)     │ (Right panel)    │                          ║
+║  └──────────────────┴──────────────────┘                          ║
+║                                                                    ║
+║ STUDENT WINDOW:                                                    ║
+║  ┌──────────────────┬──────────────────┐                          ║
+║  │ Quiz Questions   │ Live Chat        │                          ║
+║  │ (Left panel)     │ (Right panel)    │                          ║
+║  └──────────────────┴──────────────────┘                          ║
+╚════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────┐
+│ TEST CONVERSATION EXAMPLE                                          │
+├────────────────────────────────────────────────────────────────────┤
+│ 1. Teacher types: "Welcome to the quiz!"                          │
+│    → Alice sees: [10:30] admin (Teacher): Welcome to the quiz!    │
+│    → Bob sees:   [10:30] admin (Teacher): Welcome to the quiz!    │
+│                                                                    │
+│ 2. Alice types: "Thank you, I'm ready!"                           │
+│    → Alice sees:  [10:31] You: Thank you, I'm ready!              │
+│    → Teacher sees: [10:31] alice: Thank you, I'm ready!           │
+│    → Bob sees:     [10:31] alice: Thank you, I'm ready!           │
+│                                                                    │
+│ 3. Bob types: "Me too!"                                           │
+│    → Bob sees:    [10:32] You: Me too!                            │
+│    → Teacher sees: [10:32] bob: Me too!                           │
+│    → Alice sees:   [10:32] bob: Me too!                           │
+│                                                                    │
+│ 4. Teacher types: "Great! Begin when ready."                      │
+│    → Everyone sees the message instantly!                         │
+└────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════╗
+║                    TROUBLESHOOTING                                 ║
+╠════════════════════════════════════════════════════════════════════╣
+║ Problem: "Could not connect to chat server"                       ║
+║ Solution: Make sure start-servers.bat is running                  ║
+║                                                                    ║
+║ Problem: Messages not appearing                                   ║
+║ Solution: Check that chat panel shows "Connected to chat server!" ║
+║                                                                    ║
+║ Problem: Can't type in chat                                       ║
+║ Solution: Make sure you're logged in successfully                 ║
+╚════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────┐
+│ NIO FEATURES BEING TESTED                                          │
+├────────────────────────────────────────────────────────────────────┤
+│ ✓ Non-blocking I/O - Server doesn't block on reads/writes         │
+│ ✓ Selector Pattern - One thread handles all chat connections      │
+│ ✓ Real-time Broadcast - Messages delivered to all instantly       │
+│ ✓ Event-driven - Messages processed as events arrive              │
+│ ✓ Scalability - Can handle many connections efficiently           │
+└────────────────────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════╗
+║                  SUCCESS CHECKLIST                                 ║
+╠════════════════════════════════════════════════════════════════════╣
+║ □ All windows can send messages                                   ║
+║ □ All windows receive all messages                                ║
+║ □ Messages appear in real-time (no delay)                         ║
+║ □ Join/leave notifications work                                   ║
+║ □ Teacher labeled as "(Teacher)"                                  ║
+║ □ Timestamps are correct                                          ║
+║ □ Can chat while taking quiz                                      ║
+║ □ Server console shows "User registered: [username]"              ║
+╚════════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════
+  For detailed instructions, see TESTING_GUIDE.md
+═══════════════════════════════════════════════════════════════════════
+

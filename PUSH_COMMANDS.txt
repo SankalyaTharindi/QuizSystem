@@ -1,0 +1,106 @@
+═══════════════════════════════════════════════════════════════
+  QUICK COMMANDS TO PUSH YOUR NIO CHAT FEATURE
+═══════════════════════════════════════════════════════════════
+
+OPTION 1: Use the Automated Script (EASIEST)
+─────────────────────────────────────────────────────────────
+Just double-click: git-push.bat
+
+It will:
+✓ Show you what changed
+✓ Add all files
+✓ Commit with proper message
+✓ Push to remote
+✓ Verify success
+
+
+OPTION 2: Manual Commands (Copy & Paste)
+─────────────────────────────────────────────────────────────
+cd "D:\Netwotk Programming Project\QuizSystem"
+git add .
+git commit -m "feat: Add NIO-based real-time chat system with comprehensive documentation"
+git push origin main
+
+
+OPTION 3: Detailed Manual Commands
+─────────────────────────────────────────────────────────────
+# Navigate to project
+cd "D:\Netwotk Programming Project\QuizSystem"
+
+# Check status
+git status
+
+# Add all files
+git add .
+
+# Commit with message
+git commit -m "feat: Add NIO-based real-time chat system" -m "- Implemented NIO chat server with Selector pattern
+- Added real-time messaging between students and teachers
+- Created comprehensive documentation and testing guides
+- Added automated demo scripts for easy testing"
+
+# Push to remote (change 'main' to 'master' if needed)
+git push origin main
+
+# Verify
+git log --oneline -3
+
+
+═══════════════════════════════════════════════════════════════
+  FILES BEING ADDED (15 total)
+═══════════════════════════════════════════════════════════════
+
+NEW JAVA FILES:
+  src/ChatServer.java          - NIO chat server
+  src/ChatMessage.java         - Message model
+  src/ChatClientPanel.java    - Chat UI component
+  src/ServerLauncher.java      - Unified launcher
+
+MODIFIED JAVA FILES:
+  src/QuizClient.java          - Updated with chat integration
+
+DOCUMENTATION:
+  TESTING_GUIDE.md             - How to test chat
+  NIO_IMPLEMENTATION_GUIDE.md  - Technical deep dive
+  QUICK_START.md               - Quick start guide
+  IMPLEMENTATION_SUMMARY.md    - Feature summary
+  ARCHITECTURE_DIAGRAMS.md     - Visual diagrams
+  CHAT_TEST_REFERENCE.txt      - Quick reference
+  README_NEW.md                - Updated README
+  GIT_PUSH_COMMANDS.md         - This guide
+
+BATCH FILES:
+  start-servers.bat            - Launch servers
+  start-client.bat             - Launch client
+  demo-chat-test.bat           - Automated demo
+
+
+═══════════════════════════════════════════════════════════════
+  TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Problem: "Updates were rejected"
+Solution: git pull origin main --rebase
+          git push origin main
+
+Problem: "Not a git repository"
+Solution: Make sure you're in the QuizSystem folder
+
+Problem: Wrong branch name?
+Solution: Use 'master' instead of 'main' in commands
+          git push origin master
+
+Problem: Want to exclude .class files?
+Solution: echo *.class >> .gitignore
+          git add .gitignore
+          git commit -m "chore: Update gitignore"
+
+
+═══════════════════════════════════════════════════════════════
+  RECOMMENDED: Use Option 1
+═══════════════════════════════════════════════════════════════
+
+Simply double-click: git-push.bat
+
+It handles everything automatically and safely!
+

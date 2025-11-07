@@ -32,6 +32,10 @@ public class QuizClient {
     private JPasswordField txtPassword;
     private JComboBox<String> cmbRole;
 
+    // Chat component
+    private ChatClientPanel chatPanel;
+    private String currentUsername;
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new QuizClient().showLogin());
     }
@@ -69,6 +73,8 @@ public class QuizClient {
         String password = new String(txtPassword.getPassword());
         String role = (String) cmbRole.getSelectedItem();
 
+
+        currentUsername = username; // Store username for chat
         if (username.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(frame, "Please fill in all fields.");
             return;
@@ -114,19 +120,42 @@ public class QuizClient {
 
     /** Show teacher view */
     private void showTeacherPanel(String msg) {
-        JFrame teacherFrame = new JFrame("Teacher Dashboard");
-        teacherFrame.setSize(400, 300);
+        JFrame teacherFrame = new JFrame("Teacher Dashboard - " + currentUsername);
+        teacherFrame.setSize(800, 500);
         teacherFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        teacherFrame.setLayout(new BorderLayout(10, 10));
 
+        // Scores panel
         JTextArea textArea = new JTextArea();
         textArea.setEditable(false);
-        teacherFrame.add(new JScrollPane(textArea), BorderLayout.CENTER);
+        JScrollPane scoresScroll = new JScrollPane(textArea);
+        scoresScroll.setBorder(BorderFactory.createTitledBorder("Student Scores"));
 
+        // Create split pane with scores on left and chat on right
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setLeftComponent(scoresScroll);
+
+        // Add chat panel
+        chatPanel = new ChatClientPanel(currentUsername + " (Teacher)");
+        splitPane.setRightComponent(chatPanel);
+        splitPane.setDividerLocation(450);
+
+        teacherFrame.add(splitPane, BorderLayout.CENTER);
         teacherFrame.setLocationRelativeTo(null);
         teacherFrame.setVisible(true);
 
         // initialize text right away
         textArea.setText("Welcome Teacher!\nThe students' scores will be displayed here.\n\n");
+
+        // Cleanup on close
+        teacherFrame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                if (chatPanel != null) {
+                    chatPanel.disconnect();
+                }
+            }
+        });
 
         // Start a background thread to listen for updates from the server
         new Thread(() -> {
@@ -148,15 +177,18 @@ public class QuizClient {
 
     /** STEP 5: Show student quiz GUI */
     private void showQuizUI() {
-        frame = new JFrame("Online Quiz");
+        frame = new JFrame("Online Quiz - " + currentUsername);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(600, 300);
+        frame.setSize(900, 500);
         frame.setLayout(new BorderLayout());
+
+        // Quiz panel (left side)
+        JPanel quizPanel = new JPanel(new BorderLayout());
 
         lblQuestion = new JLabel("Loading quiz...");
         lblQuestion.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
         lblQuestion.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        frame.add(lblQuestion, BorderLayout.NORTH);
+        quizPanel.add(lblQuestion, BorderLayout.NORTH);
 
         JPanel optionsPanel = new JPanel(new GridLayout(4, 1));
         optionButtons = new JRadioButton[4];
@@ -166,14 +198,34 @@ public class QuizClient {
             group.add(optionButtons[i]);
             optionsPanel.add(optionButtons[i]);
         }
-        frame.add(optionsPanel, BorderLayout.CENTER);
+        quizPanel.add(optionsPanel, BorderLayout.CENTER);
 
         btnNext = new JButton("Next");
         btnNext.addActionListener(e -> onNextClicked());
-        frame.add(btnNext, BorderLayout.SOUTH);
+        quizPanel.add(btnNext, BorderLayout.SOUTH);
 
+        // Create split pane with quiz on left and chat on right
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane.setLeftComponent(quizPanel);
+
+        // Add chat panel
+        chatPanel = new ChatClientPanel(currentUsername);
+        splitPane.setRightComponent(chatPanel);
+        splitPane.setDividerLocation(550);
+
+        frame.add(splitPane, BorderLayout.CENTER);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+
+        // Cleanup on close
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                if (chatPanel != null) {
+                    chatPanel.disconnect();
+                }
+            }
+        });
     }
 
     /** STEP 6: Receive quiz data from server */
