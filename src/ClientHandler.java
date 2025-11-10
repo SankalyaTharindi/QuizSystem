@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ClientHandler implements Runnable {
-
     private Socket socket;
 
     public ClientHandler(Socket socket) {
@@ -21,7 +20,6 @@ public class ClientHandler implements Runnable {
                 ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
                 ObjectInputStream in = new ObjectInputStream(socket.getInputStream())
         ) {
-
             // 1️⃣ Wait for login
             Object first = in.readObject();
             if (!(first instanceof src.LoginRequest login)) {
@@ -30,7 +28,7 @@ public class ClientHandler implements Runnable {
                 return;
             }
 
-            // 2️⃣ Handle teacher login
+            // 2️⃣ Teacher login
             if (login.getRole().equalsIgnoreCase("teacher")
                     && login.getUsername().equals("admin")
                     && login.getPassword().equals("123")) {
@@ -43,27 +41,21 @@ public class ClientHandler implements Runnable {
                     src.QuizServer.teacherStreams.add(out);
                 }
 
-                // Send current results
                 synchronized (src.QuizServer.studentResults) {
                     out.writeObject(new ArrayList<>(src.QuizServer.studentResults));
                     out.flush();
                 }
 
-                // Keep teacher connected to receive updates
-                while (!socket.isClosed()) {
-                    Thread.sleep(5000);
-                }
+                while (!socket.isClosed()) Thread.sleep(5000);
                 return;
             }
 
-            // 3️⃣ Handle student login
+            // 3️⃣ Student login
             if (login.getRole().equalsIgnoreCase("student")
                     && login.getPassword().equals("student")) {
-
                 out.writeObject(new src.LoginResponse(true, "Student login successful"));
                 out.flush();
-                System.out.println("Student logged in: " + socket.getInetAddress());
-
+                System.out.println("Student logged in: " + login.getUsername());
             } else {
                 out.writeObject(new src.LoginResponse(false, "Invalid credentials"));
                 out.flush();
@@ -71,9 +63,13 @@ public class ClientHandler implements Runnable {
                 return;
             }
 
-            // 4️⃣ Send quiz to student
+            // 4️⃣ Send quiz and start timer
             List<src.Question> quiz = src.QuizData.getQuestions();
             out.writeObject(quiz);
+            out.flush();
+
+            // Send timer start message (5 minutes)
+            out.writeObject("START_QUIZ:300");
             out.flush();
 
             // 5️⃣ Receive answers
@@ -92,7 +88,7 @@ public class ClientHandler implements Runnable {
 
             String resultLine = "Student " + login.getUsername() + " scored: " + score + "/" + quiz.size();
 
-            // 7️⃣ Save result & notify teachers
+            // 7️⃣ Save result and update teacher views
             synchronized (src.QuizServer.studentResults) {
                 src.QuizServer.studentResults.add(resultLine);
             }
@@ -106,10 +102,9 @@ public class ClientHandler implements Runnable {
                 }
             }
 
-            // 8️⃣ Send score to student
+            // 8️⃣ Send result to student
             out.writeObject(Integer.valueOf(score));
             out.flush();
-
             System.out.println(resultLine);
 
         } catch (Exception e) {
