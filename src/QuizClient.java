@@ -32,6 +32,7 @@ public class QuizClient {
     private JComboBox<String> cmbRole;
 
     private src.ChatClientPanel chatPanel;
+    private SimpleUDPListener udpListener;
     private String currentUsername;
 
     private javax.swing.Timer countdownTimer;
@@ -125,6 +126,10 @@ public class QuizClient {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setLeftComponent(scoresScroll);
         chatPanel = new src.ChatClientPanel(currentUsername + " (Teacher)");
+        
+        // Initialize simple UDP listener for teacher
+        udpListener = new SimpleUDPListener(teacherFrame, currentUsername + " (Teacher)");
+        
         splitPane.setRightComponent(chatPanel);
         splitPane.setDividerLocation(450);
 
@@ -217,6 +222,10 @@ public class QuizClient {
         splitPane.setLeftComponent(leftContainer);
 
         chatPanel = new src.ChatClientPanel(currentUsername);
+        
+        // Initialize simple UDP listener for student
+        udpListener = new SimpleUDPListener(frame, currentUsername);
+        
         splitPane.setRightComponent(chatPanel);
         splitPane.setDividerLocation(550);
 
@@ -310,6 +319,12 @@ public class QuizClient {
     private void submitAnswers() {
         try {
             if (countdownTimer != null) countdownTimer.stop();
+            
+            // Cleanup UDP listener
+            if (udpListener != null) {
+                udpListener.shutdown();
+            }
+            
             out.writeObject(answers);
             out.flush();
             Object resp = in.readObject();
