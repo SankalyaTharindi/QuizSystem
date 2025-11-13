@@ -74,6 +74,7 @@ public class ClientHandler implements Runnable {
 
             // 📡 Trigger automatic UDP notifications for this student
             UDPNotificationTrigger.triggerQuizStart(login.getUsername());
+            // Send "student started" notification only to teachers
             UDPNotificationTrigger.sendQuizEvent("Student " + login.getUsername() + " has started the quiz!");
             
             System.out.println("🎯 Started 5-minute quiz for: " + login.getUsername() + " with automatic notifications");
@@ -113,8 +114,9 @@ public class ClientHandler implements Runnable {
             out.flush();
             System.out.println(resultLine);
             
-            // 📡 Notify that student finished quiz
-            UDPNotificationTrigger.sendQuizEvent(login.getUsername() + " finished the quiz! Score: " + score + "/" + quiz.size());
+            // 📡 Notify score only to this student and teachers (not other students)
+            UDPNotificationTrigger.sendQuizEvent("SCORE:" + login.getUsername() + ":" + 
+                login.getUsername() + " finished the quiz! Score: " + score + "/" + quiz.size());
 
         } catch (Exception e) {
             System.out.println("Error with client " + socket.getInetAddress() + ": " + e.getMessage());

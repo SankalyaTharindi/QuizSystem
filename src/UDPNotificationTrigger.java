@@ -12,8 +12,9 @@ public class UDPNotificationTrigger {
         try {
             DatagramSocket socket = new DatagramSocket();
             
-            String command = "START_QUIZ_TIMER";
-            byte[] data = command.getBytes();
+            // Send student-specific command
+            String command = "START_QUIZ_TIMER:" + studentName;
+            byte[] data = command.getBytes("UTF-8");
             
             InetAddress serverAddress = InetAddress.getByName("localhost");
             DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, 5020);
@@ -21,7 +22,7 @@ public class UDPNotificationTrigger {
             socket.send(packet);
             socket.close();
             
-            System.out.println("🎯 Triggered automatic quiz timer start for: " + studentName);
+            System.out.println("🎯 Triggered individual quiz timer start for: " + studentName);
         } catch (Exception e) {
             System.err.println("Failed to trigger quiz start: " + e.getMessage());
         }
@@ -31,8 +32,9 @@ public class UDPNotificationTrigger {
         try {
             DatagramSocket socket = new DatagramSocket();
             
-            String command = "STOP_QUIZ_TIMER";
-            byte[] data = command.getBytes();
+            // Send student-specific command
+            String command = "STOP_QUIZ_TIMER:" + studentName;
+            byte[] data = command.getBytes("UTF-8");
             
             InetAddress serverAddress = InetAddress.getByName("localhost");
             DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, 5020);

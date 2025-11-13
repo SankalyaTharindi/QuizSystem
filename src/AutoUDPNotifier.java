@@ -19,11 +19,17 @@ public class AutoUDPNotifier {
         String name;
         InetAddress address;
         int port;
+        boolean isTeacher;
+        Timer individualTimer;
+        long quizStartTime;
         
         ClientInfo(String name, InetAddress address, int port) {
             this.name = name;
             this.address = address;
             this.port = port;
+            this.isTeacher = name.toLowerCase().contains("teacher");
+            this.individualTimer = null;
+            this.quizStartTime = 0;
         }
     }
     
@@ -135,19 +141,9 @@ public class AutoUDPNotifier {
     }
     
     private void startAutomaticNotifications() {
-        // Send welcome notifications every 30 seconds for new joiners
-        Timer welcomeTimer = new Timer("WelcomeTimer", true);
-        welcomeTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if (!registeredClients.isEmpty()) {
-                    // Only send if no quiz timer is running
-                    if (notificationTimer == null) {
-                        sendNotification("SYSTEM_PING:Quiz system is active. Type 'start' to begin quiz timer.");
-                    }
-                }
-            }
-        }, 30000, 30000); // Every 30 seconds
+        // This method is kept for future enhancements if needed
+        // Individual student timers start automatically when they begin their quiz
+        // No periodic pings needed - each student has their own timer
     }
     
     private void startCommandListener() {
@@ -172,18 +168,144 @@ public class AutoUDPNotifier {
         }, "CommandListener").start();
     }
     
+    /**
+     * Start individual quiz timer for a specific student
+     * Retries if student not yet registered
+     */
+    private void startIndividualQuizTimer(String studentName) {
+        ClientInfo student = registeredClients.get(studentName);
+        
+        if (student == null) {
+            System.out.println("⚠️  Student '" + studentName + "' not found yet - will retry in 1 second...");
+            // Retry after 1 second to allow registration to complete
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    startIndividualQuizTimerNow(studentName);
+                }
+            }, 1000);
+            return;
+        }
+        
+        startIndividualQuizTimerNow(studentName);
+    }
+    
+    /**
+     * Actually start the timer (internal method)
+     */
+    private void startIndividualQuizTimerNow(String studentName) {
+        ClientInfo student = registeredClients.get(studentName);
+        
+        if (student == null) {
+            System.out.println("❌ Student '" + studentName + "' still not found after retry - timer not started");
+            return;
+        }
+        
+        if (student.isTeacher) {
+            System.out.println("🚫 Not starting timer for teacher: " + studentName);
+            return;
+        }
+        
+        // Stop any existing timer for this student
+        if (student.individualTimer != null) {
+            student.individualTimer.cancel();
+        }
+        
+        // Create new timer for this student
+        student.individualTimer = new Timer("QuizTimer-" + studentName);
+        student.quizStartTime = System.currentTimeMillis();
+        
+        System.out.println("🚀 Starting 5-minute quiz timer for: " + studentName);
+        
+        // Send quiz start notification (only to this student)
+        sendToClient("QUIZ_START:5-minute quiz has begun! Good luck!", student);
+        
+        // Schedule notifications at specific times for this student
+        scheduleIndividualNotification(student, 60, "NOTIFICATION:4 minutes remaining! Keep going!");
+        scheduleIndividualNotification(student, 120, "NOTIFICATION:3 minutes remaining! You're doing great!");
+        scheduleIndividualNotification(student, 180, "TIME_WARNING:⏰ 2 minutes remaining! Speed up!");
+        scheduleIndividualNotification(student, 240, "TIME_WARNING:⚠️ 1 MINUTE LEFT! Finish your answers!");
+        scheduleIndividualNotification(student, 270, "TIME_WARNING:🚨 30 SECONDS LEFT! ");
+        scheduleIndividualNotification(student, 285, "TIME_WARNING:🚨 15 SECONDS!");
+        
+    }
+    
+    /**
+     * Schedule a notification for an individual student
+     */
+    private void scheduleIndividualNotification(ClientInfo student, int delaySeconds, String message) {
+        student.individualTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                sendToClient(message, student);
+                int remainingMinutes = (QUIZ_DURATION_SECONDS - delaySeconds) / 60;
+                int remainingSeconds = (QUIZ_DURATION_SECONDS - delaySeconds) % 60;
+                System.out.println("⏰ Sent to " + student.name + ": " + message + 
+                    " (Time left: " + remainingMinutes + ":" + String.format("%02d", remainingSeconds) + ")");
+            }
+        }, delaySeconds * 1000L);
+    }
+    
+    /**
+     * Stop individual quiz timer for a specific student
+     */
+    private void stopIndividualQuizTimer(String studentName) {
+        ClientInfo student = registeredClients.get(studentName);
+        
+        if (student == null) {
+            System.out.println("⚠️  Student '" + studentName + "' not found");
+            return;
+        }
+        
+        if (student.individualTimer != null) {
+            student.individualTimer.cancel();
+            student.individualTimer = null;
+            sendToClient("NOTIFICATION:Your quiz timer has been stopped.", student);
+            System.out.println("🛑 Quiz timer stopped for: " + studentName);
+        } else {
+            System.out.println("⚠️ No active timer for: " + studentName);
+        }
+    }
+    
     private void handleAutomaticCommand(String command) {
         System.out.println("🎯 Received automatic command: " + command);
         
-        if (command.equals("START_QUIZ_TIMER")) {
-            System.out.println("🚀 Student started quiz - automatically starting 5-minute timer!");
+        if (command.startsWith("START_QUIZ_TIMER:")) {
+            // Format: START_QUIZ_TIMER:StudentName
+            String studentName = command.substring(17);
+            System.out.println("🚀 Student '" + studentName + "' started quiz - starting their individual timer!");
+            startIndividualQuizTimer(studentName);
+        } else if (command.startsWith("STOP_QUIZ_TIMER:")) {
+            String studentName = command.substring(16);
+            System.out.println("🛑 Quiz ended for " + studentName + " - stopping their timer");
+            stopIndividualQuizTimer(studentName);
+        } else if (command.equals("START_QUIZ_TIMER")) {
+            // Old format - still supported but deprecated
+            System.out.println("⚠️  Using old global timer format - should use per-student timers!");
             startQuizTimer();
         } else if (command.equals("STOP_QUIZ_TIMER")) {
-            System.out.println("🛑 Quiz ended - stopping timer");
             stopQuizTimer();
         } else if (command.startsWith("QUIZ_EVENT:")) {
+            // Format: QUIZ_EVENT:Student aa has started the quiz!
+            // OR: QUIZ_EVENT:SCORE:studentName:aa finished the quiz! Score: 5/10
             String eventMessage = command.substring(11);
-            sendNotification("NOTIFICATION:" + eventMessage);
+            
+            if (eventMessage.startsWith("SCORE:")) {
+                // Extract student name and score message
+                String[] parts = eventMessage.split(":", 3);
+                if (parts.length >= 3) {
+                    String studentName = parts[1];
+                    String scoreMessage = parts[2];
+                    // Send score only to that student and teachers
+                    sendNotificationToStudentAndTeachers(studentName, "NOTIFICATION:" + scoreMessage);
+                }
+            } else if (eventMessage.contains("started the quiz")) {
+                // Send "student started" notification only to teachers
+                sendNotificationToTeachers("NOTIFICATION:" + eventMessage);
+            } else {
+                // Other general notifications go to everyone
+                sendNotification("NOTIFICATION:" + eventMessage);
+            }
         }
     }
     
@@ -233,8 +355,12 @@ public class AutoUDPNotifier {
                 
                 System.out.println("✅ Client registered: " + clientName + " (" + clientAddress + ":" + clientPort + ")");
                 
-                // Send welcome message
-                sendToClient("NOTIFICATION:Welcome " + clientName + "! You'll receive automatic quiz notifications.", client);
+                // Send welcome message only to students, not teachers
+                if (!client.isTeacher) {
+                    sendToClient("NOTIFICATION:Welcome " + clientName + "! Your timer will start automatically when you begin the quiz.", client);
+                } else {
+                    System.out.println("👨‍🏫 Teacher registered: " + clientName + " (will not receive quiz timers)");
+                }
             }
         } catch (Exception e) {
             System.err.println("Error handling client registration: " + e.getMessage());
@@ -269,6 +395,47 @@ public class AutoUDPNotifier {
         }
         
         System.out.println("📤 Sent notification to " + sent + " clients: " + message);
+    }
+    
+    /**
+     * Send notification only to teachers (e.g., "Student X started quiz")
+     */
+    private void sendNotificationToTeachers(String message) {
+        if (registeredClients.isEmpty()) {
+            System.out.println("⚠️ No registered clients to notify");
+            return;
+        }
+        
+        int sent = 0;
+        for (ClientInfo client : registeredClients.values()) {
+            if (client.isTeacher && sendToClient(message, client)) {
+                sent++;
+            }
+        }
+        
+        System.out.println("📤 Sent notification to " + sent + " teacher(s): " + message);
+    }
+    
+    /**
+     * Send notification to a specific student and all teachers (e.g., quiz scores)
+     */
+    private void sendNotificationToStudentAndTeachers(String studentName, String message) {
+        if (registeredClients.isEmpty()) {
+            System.out.println("⚠️ No registered clients to notify");
+            return;
+        }
+        
+        int sent = 0;
+        for (ClientInfo client : registeredClients.values()) {
+            // Send to the specific student OR any teacher
+            if (client.name.equals(studentName) || client.isTeacher) {
+                if (sendToClient(message, client)) {
+                    sent++;
+                }
+            }
+        }
+        
+        System.out.println("📤 Sent notification to student '" + studentName + "' and teachers (" + sent + " recipients): " + message);
     }
     
     private boolean sendToClient(String message, ClientInfo client) {

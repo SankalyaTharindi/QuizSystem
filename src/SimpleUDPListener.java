@@ -2,12 +2,11 @@ package src;
 
 import java.net.*;
 import javax.swing.*;
-import java.awt.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Simple UDP Listener for QuizClient
- * Listens for UDP notifications and shows popups
+ * Listens for UDP notifications and shows them in the quiz GUI using JOptionPane
  */
 public class SimpleUDPListener {
     private DatagramSocket socket;
@@ -35,11 +34,18 @@ public class SimpleUDPListener {
         }
     }
     
+    /**
+     * Set or update the parent frame for notifications
+     */
+    public void setParentFrame(JFrame parent) {
+        this.parentFrame = parent;
+    }
+    
     private void registerWithNotificationServer() {
         try {
             // Send our listening port to the notification server
             String registration = "REGISTER:" + clientName + ":" + actualPort;
-            byte[] data = registration.getBytes();
+            byte[] data = registration.getBytes("UTF-8");
             
             InetAddress serverAddress = InetAddress.getByName("localhost");
             DatagramPacket packet = new DatagramPacket(data, data.length, serverAddress, 5010);
@@ -87,27 +93,27 @@ public class SimpleUDPListener {
             
             if (message.startsWith("QUIZ_START:")) {
                 displayMessage = message.substring(11);
-                title = "Quiz Started!";
+                title = "🚀 Quiz Started";
                 messageType = JOptionPane.INFORMATION_MESSAGE;
             } else if (message.startsWith("QUIZ_END:")) {
                 displayMessage = message.substring(9);
-                title = "Quiz Ended";
-                messageType = JOptionPane.WARNING_MESSAGE;
+                title = "⏰ Quiz Ended";
+                messageType = JOptionPane.ERROR_MESSAGE;
             } else if (message.startsWith("QUIZ_REMINDER:")) {
                 displayMessage = message.substring(14);
-                title = "Quiz Reminder";
+                title = "📢 Quiz Reminder";
                 messageType = JOptionPane.WARNING_MESSAGE;
             } else if (message.startsWith("TIME_WARNING:")) {
                 displayMessage = message.substring(13);
-                title = "⚠️ TIME WARNING";
+                title = "⏰ Time Warning";
                 messageType = JOptionPane.WARNING_MESSAGE;
             } else if (message.startsWith("NOTIFICATION:")) {
                 displayMessage = message.substring(13);
-                title = "Notification";
+                title = "📢 Notification";
                 messageType = JOptionPane.INFORMATION_MESSAGE;
             } else if (message.startsWith("SYSTEM_PING:")) {
                 // Don't show system pings as popups, just log them
-                System.out.println("System ping: " + message.substring(12));
+                System.out.println("💓 System ping: " + message.substring(12));
                 return;
             } else {
                 displayMessage = message;
@@ -119,49 +125,13 @@ public class SimpleUDPListener {
                 displayMessage = "Notification received";
             }
             
-            // Create a more robust dialog
-            JDialog dialog = new JDialog(parentFrame, title, false);
-            dialog.setSize(450, 200);
-            dialog.setLocationRelativeTo(parentFrame);
-            dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-            
-            JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
-            // Add padding manually since we removed BorderFactory import
-            
-            // Message area with proper text handling
-            JTextArea messageArea = new JTextArea(displayMessage);
-            messageArea.setEditable(false);
-            messageArea.setWrapStyleWord(true);
-            messageArea.setLineWrap(true);
-            messageArea.setFont(new Font("SansSerif", Font.PLAIN, 14));
-            messageArea.setBackground(dialog.getBackground());
-            
-            JScrollPane scrollPane = new JScrollPane(messageArea);
-            scrollPane.setPreferredSize(new Dimension(400, 80));
-            
-            mainPanel.add(scrollPane, BorderLayout.CENTER);
-            
-            // Button panel
-            JPanel buttonPanel = new JPanel(new FlowLayout());
-            JButton okButton = new JButton("OK");
-            okButton.setPreferredSize(new Dimension(80, 30));
-            okButton.addActionListener(e -> dialog.dispose());
-            buttonPanel.add(okButton);
-            
-            mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-            
-            dialog.add(mainPanel);
-            dialog.setVisible(true);
-            
-            // Auto-close time depends on message urgency
-            int autoCloseTime = 15000; // 15 seconds default
-            if (displayMessage.contains("SECONDS LEFT") || displayMessage.contains("TIME'S UP")) {
-                autoCloseTime = 30000; // 30 seconds for urgent messages
-            }
-            
-            Timer autoClose = new Timer(autoCloseTime, e -> dialog.dispose());
-            autoClose.setRepeats(false);
-            autoClose.start();
+            // Show notification directly in the quiz GUI using JOptionPane
+            JOptionPane.showMessageDialog(
+                parentFrame,
+                displayMessage,
+                title,
+                messageType
+            );
         });
     }
     
