@@ -95,8 +95,14 @@ public class QuizClient {
                 if (res.isSuccess()) {
                     SwingUtilities.invokeLater(() -> {
                         frame.dispose();
-                        if (role.equalsIgnoreCase("teacher")) showTeacherPanel(res.getMessage());
+                        if (role.equalsIgnoreCase("teacher")) {
+                            showTeacherPanel(res.getMessage());
+                        }
                         else {
+                            // ⚡ Create UDP listener IMMEDIATELY after login, BEFORE receiving quiz
+                            // This ensures the student is registered before the server sends timer command
+                            udpListener = new SimpleUDPListener(null, username);
+                            
                             showQuizUI();
                             new Thread(this::receiveQuizFromServer).start();
                         }
@@ -223,8 +229,10 @@ public class QuizClient {
 
         chatPanel = new src.ChatClientPanel(currentUsername);
         
-        // Initialize simple UDP listener for student
-        udpListener = new SimpleUDPListener(frame, currentUsername);
+        // Update UDP listener with the quiz frame reference (already created after login)
+        if (udpListener != null) {
+            udpListener.setParentFrame(frame);
+        }
         
         splitPane.setRightComponent(chatPanel);
         splitPane.setDividerLocation(550);
